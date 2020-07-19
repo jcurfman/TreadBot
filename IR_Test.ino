@@ -9,6 +9,9 @@ void setup() {
 
 void loop() {
   //Short distance IR sensor: 3V @ 10cm (4") -> 0.4V @ 80cm (32")
+  //=29.988*pow(calcResult, -1.173); //curve fit based on datasheet, accurarcy may vary sensor to sensor
+  //Medium distance IR sensor: 3V @ 20cm (8") -> 0.4V @ 150cm (60")
+  //=65*pow(calcResult, -1.10); //curve fit based on datasheet
   float distance=readIRDistance(IRin1);
   float calcInches=distance*0.3937; //conversion from cm to inches
   Serial.print("Distance reading (in): ");
@@ -30,7 +33,7 @@ float readIRDistance(int sensorPin) {
     sum+=storedValues[i];
   }
   float calcResult=sum/numSamples;
-  float calcDistance=29.988*pow(calcResult, -1.173); //curve fit based on datasheet, accurarcy may vary sensor to sensor
+  float calcDistance=65*pow(calcResult, -1.10);
   return calcDistance;
 }
 
