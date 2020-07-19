@@ -16,6 +16,11 @@ int range = 24;
 int center = range/2;
 int threshold = range/6;
 
+//setup IR distance sensors
+const int leftIR=A2;
+const int rightIR=A3;
+int numSamples=40; //number of samples to average. More=Slower.
+
 void setup() {
   Serial.begin(9600);
   Serial.println("Start");
@@ -35,8 +40,33 @@ void setup() {
   digitalWrite(in4, LOW);
 }
 
+void autoLoop() {
+  //Automatic test loop- finds its way around based on IR sensors. Needs work
+  float leftDistance=readIRDistance(leftIR);
+  float rightDistance=readIRDistance(rightIR);
+  Serial.print("Left Side: "); Serial.println(leftDistance);
+  Serial.print("Right side: "); Serial.println(rightDistance);
+
+  if(leftDistance>8 && rightDistance>8) {
+    Serial.println("Clear for >10in"); Serial.println("Move forward");
+    motorControl(1, 100);
+  }
+  else if(leftDistance<8 && rightDistance>8) {
+    Serial.println("Obstacle on left side"); Serial.println("Turn right");
+    motorControl(4, 80);
+  }
+  else if(leftDistance>8 && rightDistance<8) {
+    Serial.println("Obstacle on right side"); Serial.println("Turn left");
+    motorControl(2, 80);
+  }
+  else {
+    Serial.println("Error"); Serial.println("Stop");
+    motorControl(1,0);
+  }
+}
+
 void loop() {
-  //Test loop, needs substantial work
+  //Manual Test loop
   int xReading, yReading;
   xReading=readAxis(xAxis);
   yReading=readAxis(yAxis);
@@ -118,4 +148,23 @@ int readAxis(int thisAxis) {
   }
   //return distance on this axis
   return distance;
+}
+
+float readIRDistance(int sensorPin) {
+  //call to read in data, take an average of ten readings, and convert to distance in cm or inches
+  float storedValues[numSamples];
+  float sum=0;
+  for(int i=0; i<numSamples; i++) {
+    //creates an array of readings to average
+    int rawValue=analogRead(sensorPin);
+    float rawVoltage=(rawValue/1024.0)*5;
+    storedValues[i]=rawVoltage;
+  }
+  for(int i=0; i<numSamples; i++) {
+    sum+=storedValues[i];
+  }
+  float calcResult=sum/numSamples;
+  float calcDistance=29.988*pow(calcResult, -1.173); //curve fit based on datasheet, accurarcy may vary sensor to sensor
+  calcDistance*=0.3937; //conversion from cm to inches
+  return calcDistance;
 }
